@@ -12,10 +12,28 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 model User {
-  id       Int    @id @default(autoincrement())
-  NIU      String
-  Nama     String
-  password String
+  id                 Int      @id @default(autoincrement())
+  Nama               String
+  NIU                String   @unique
+  Password           String
+  Pilihan_OSIS       String      @unique
+  Pilihan_MPK        String      @unique
+
+  @@index(NIU)
+}
+
+model Paslon_OSIS {
+  id          Int      @id @default(autoincrement())
+  No_Pilihan  String      @unique
+  Nama_Ketua  String
+  Nama_Wakil_Ketua String
+  Jumlah_Suara Int
+}
+
+model Calon_MPK {
+  id          Int      @id @default(autoincrement())
+  No_Pilihan  String      @unique
+  Nama_Calon  String
+  Jumlah_Suara Int
 }

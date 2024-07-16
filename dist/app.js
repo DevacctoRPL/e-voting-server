@@ -19,6 +19,9 @@ app.use(express_1.default.json());
 app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
+app.get('/Update', (req, res) => {
+    res.send("Update coy");
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
