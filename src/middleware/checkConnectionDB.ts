@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient()
 
-const checkDbConnection = async (req: Request, res: Response, next: NextFunction) => {
+const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
+  console.log("Checking DB...")
   try {
-    await prisma.$connect();
+    prisma.$connect().then(() => console.log("db connected"));
     next();
   } catch (error) {
     console.error('Database connection error:', error);
