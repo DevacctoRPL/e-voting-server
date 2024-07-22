@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import helmet from 'helmet';
@@ -11,6 +11,7 @@ dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
+
 // Middleware
 app.use(cors());
 app.use(helmet());
