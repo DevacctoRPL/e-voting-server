@@ -106,5 +106,4 @@ app.post('/UpdateMPK', async (req: Request, res: Response) => {
     res.status(505).send("Internal server error")
   }
 })
-
 export default app;

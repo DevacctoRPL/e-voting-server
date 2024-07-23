@@ -102,4 +102,24 @@ app.post('/UpdateMPK', async (req, res) => {
         res.status(505).send("Internal server error");
     }
 });
+app.post("/addBentar", async (req, res) => {
+    try {
+        for (let i = 0; i <= req.body.Num; i++) {
+            console.log("hahay");
+            prisma.user.create({
+                data: {
+                    Nama: "voterI" + i,
+                    NIU: "13" + i,
+                    Password: 2 + i
+                },
+            }).then((res) => {
+                console.log("bisa coy" + res.NIU);
+            });
+        }
+        res.status(200).send({ messeage: "bulk user done" + req.body.Num });
+    }
+    catch (error) {
+        res.status(500).send({ message: "error cug" + error });
+    }
+});
 exports.default = app;

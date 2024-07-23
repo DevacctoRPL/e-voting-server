@@ -18,8 +18,8 @@ model User {
   Nama         String
   NIU          String  @unique
   Password     Int
-  Pilihan_OSIS String? @unique
-  Pilihan_MPK  String? @unique
+  Pilihan_OSIS String?
+  Pilihan_MPK  String?
 
   @@index(NIU)
 }
