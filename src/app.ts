@@ -21,6 +21,8 @@ app.use(checkDbConnection);
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
+  const Tanggal = new Date
+  console.log(`Request: ${req}. \n Time: ${Tanggal.getTime()}, Day: ${Tanggal.getDay}`)
   res.json({ message: "Hello World!" });
 });
 
@@ -106,4 +108,5 @@ app.post('/UpdateMPK', async (req: Request, res: Response) => {
     res.status(505).send("Internal server error")
   }
 })
+
 export default app;
