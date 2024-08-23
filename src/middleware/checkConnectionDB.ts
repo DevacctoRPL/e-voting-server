@@ -3,12 +3,11 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient()
 
 const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
-  console.log("Checking DB...")
   try {
     prisma.$connect().then(() => console.log("db connected"));
     next();
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error('Database connection error:\n', error, "\n");
     res.status(503).json({ message: 'Service Unavailable: Cannot connect to database' });
   }
 };

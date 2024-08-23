@@ -14,27 +14,27 @@ datasource db {
 }
 
 model User {
-  id           Int     @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   Nama         String
-  NIU          String  @unique
+  NIU          String       @unique
   Password     Int
-  Pilihan_OSIS String?
-  Pilihan_MPK  String?
+  pilihan_mpk  Calon_MPK?   @relation(fields: [Pilihan_MPK], references: [Id])
+  pilihan_osis Paslon_OSIS? @relation(fields: [Pilihan_OSIS], references: [Id])
+  Pilihan_OSIS Int?
+  Pilihan_MPK  Int?
 
   @@index(NIU)
 }
 
 model Paslon_OSIS {
-  id               Int    @id @default(autoincrement())
-  No_Pilihan       String @unique
+  Id               Int    @id @default(autoincrement())
   Nama_Ketua       String
   Nama_Wakil_Ketua String
-  Jumlah_Suara     Int
+  Jumlah_Suara     User[]
 }
 
 model Calon_MPK {
-  id           Int    @id @default(autoincrement())
-  No_Pilihan   String @unique
+  Id           Int    @id @default(autoincrement())
   Nama_Calon   String
-  Jumlah_Suara Int
+  Jumlah_suara User[]
 }

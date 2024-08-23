@@ -8,37 +8,119 @@ const cors_1 = __importDefault(require("cors"));
 const client_1 = require("@prisma/client");
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
-const dotenv_1 = __importDefault(require("dotenv"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const checkConnectionDB_1 = __importDefault(require("./middleware/checkConnectionDB"));
-dotenv_1.default.config();
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
+// Swagger configuration
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Express API with Swagger',
+            version: '3.0.0',
+            description: 'A simple CRUD API application made with Express and documented with Swagger',
+        },
+        servers: [
+            {
+                url: 'http://localhost:5000',
+            },
+        ],
+    },
+    apis: ['./src/app.ts'],
+};
+const swaggerDocs = (0, swagger_jsdoc_1.default)(swaggerOptions);
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocs));
 // Middleware
 app.use((0, cors_1.default)());
 app.use((0, helmet_1.default)());
 app.use((0, morgan_1.default)('combined'));
 app.use(express_1.default.json());
 app.use(checkConnectionDB_1.default);
+// Swagger Schemas
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     LoginUserReq:
+ *       type: object
+ *       required:
+ *         - NIU
+ *         - password
+ *       properties:
+ *         NIU:
+ *           type: string
+ *           description: User's NIU (Number Identification Unique)
+ *         password:
+ *           type: string
+ *           description: User's password
+ *       example:
+ *         NIU: '123456789'
+ *         password: 'password123'
+ *     UpdateSuaraMPKReq:
+ *       type: object
+ *       required:
+ *         - NIU
+ *         - No_Pilihan
+ *       properties:
+ *         NIU:
+ *           type: string
+ *           description: User's NIU (Number Identification Unique)
+ *         No_Pilihan:
+ *           type: number
+ *           description: The user's choice number for the election
+ *       example:
+ *         NIU: '123456789'
+ *         No_Pilihan: 2
+ */
 // Routes
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Welcome message
+ *     responses:
+ *       200:
+ *         description: Returns a hello world message.
+ */
 app.get('/', (req, res) => {
     res.json({ message: "Hello World!" });
 });
-app.post('/LoginUser', async (req, res) => {
+/**
+ * @swagger
+ * /loginuser:
+ *   post:
+ *     summary: Login a user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginUserReq'
+ *     responses:
+ *       200:
+ *         description: User authenticated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/LoginUserReq'
+ *       500:
+ *         description: Error authenticating user.
+ */
+app.post('/loginuser', async (req, res) => {
     const LoginInfo = req.body;
     try {
         const CheckUser = await prisma.user.findUnique({
-            where: {
-                NIU: LoginInfo.NIU
-            }
+            where: { NIU: LoginInfo.NIU }
         });
         if (!CheckUser) {
             throw new Error("User Not Found");
         }
         const Auth = await prisma.user.findMany({
-            where: {
-                NIU: LoginInfo.NIU,
-                Password: LoginInfo.password,
-            }
+            where: { NIU: LoginInfo.NIU, Password: LoginInfo.password }
         });
         if (!Auth) {
             throw new Error("Password Incorrect");
@@ -46,80 +128,72 @@ app.post('/LoginUser', async (req, res) => {
         res.json(Auth);
     }
     catch (error) {
-        res.status(500).json({ message: "error authenticating user" });
+        res.status(500).json({ message: "error authenticating user", err: error });
     }
 });
+/**
+ * @swagger
+ * /UpdateOSIS:
+ *   post:
+ *     summary: Update OSIS selection for a user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateSuaraMPKReq'
+ *     responses:
+ *       200:
+ *         description: OSIS Updated successfully.
+ *       505:
+ *         description: Internal server error.
+ */
 app.post('/UpdateOSIS', async (req, res) => {
     const body = req.body;
     try {
         const updateUser = await prisma.user.update({
-            where: {
-                NIU: body.NIU
-            },
-            data: {
-                Pilihan_OSIS: body.No_Pilihan
-            }
+            where: { NIU: body.NIU },
+            data: { Pilihan_OSIS: body.No_Pilihan }
         });
-        const updateOSIS = await prisma.paslon_OSIS.update({
-            where: {
-                No_Pilihan: body.No_Pilihan
-            },
-            data: {
-                Jumlah_Suara: { increment: 1 }
-            }
-        });
-        updateUser ? res.status(200).send({ message: "Success update pilihan OSIS User" }) : res.status(500).json({ message: "Error update pilihan OSIS user" });
-        updateOSIS ? res.status(200).send({ message: "Success update jumlah suara OSIS" }) : res.status(400).json({ message: "Error update Jumlah_Suara OSIS" });
+        if (updateUser) {
+            res.status(200).send({ message: "Osis Updated" });
+        }
     }
     catch (error) {
         console.log(error);
         res.status(505).send("Internal server error");
     }
 });
+/**
+ * @swagger
+ * /UpdateMPK:
+ *   post:
+ *     summary: Update MPK selection for a user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateSuaraMPKReq'
+ *     responses:
+ *       200:
+ *         description: MPK Updated successfully.
+ *       505:
+ *         description: Internal server error.
+ */
 app.post('/UpdateMPK', async (req, res) => {
     const body = req.body;
     try {
         const updateUser = await prisma.user.update({
-            where: {
-                NIU: body.NIU
-            },
-            data: {
-                Pilihan_MPK: body.No_Pilihan
-            }
+            where: { NIU: body.NIU },
+            data: { Pilihan_MPK: body.No_Pilihan }
         });
-        const updateMPK = await prisma.calon_MPK.update({
-            where: {
-                No_Pilihan: body.No_Pilihan
-            },
-            data: {
-                Jumlah_Suara: { increment: 1 }
-            }
-        });
-        updateUser ? res.status(200).json({ message: "Success update pilihan MPK User" }) : res.status(500).json({ message: "Error update pilihan MPK user" });
-        updateMPK ? res.status(200).json({ message: "Success update jumlah suara MPK" }) : res.status(400).json({ message: "Error update Jumlah_Suara MPK" });
+        if (updateUser) {
+            res.status(200).send({ message: "MPK Updated" });
+        }
     }
     catch (error) {
         res.status(505).send("Internal server error");
-    }
-});
-app.post("/addBentar", async (req, res) => {
-    try {
-        for (let i = 0; i <= req.body.Num; i++) {
-            console.log("hahay");
-            prisma.user.create({
-                data: {
-                    Nama: "voterI" + i,
-                    NIU: "13" + i,
-                    Password: 2 + i
-                },
-            }).then((res) => {
-                console.log("bisa coy" + res.NIU);
-            });
-        }
-        res.status(200).send({ messeage: "bulk user done" + req.body.Num });
-    }
-    catch (error) {
-        res.status(500).send({ message: "error cug" + error });
     }
 });
 exports.default = app;

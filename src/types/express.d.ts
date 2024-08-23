@@ -1,5 +1,5 @@
 export type UpdateSuaraMPKReq = {
-  No_Pilihan: string,
+  No_Pilihan: number,
   NIU: string,
 }
 
