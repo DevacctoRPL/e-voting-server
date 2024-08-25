@@ -1,4 +1,4 @@
-export type UpdateSuaraMPKReq = {
+export type UpdateSuaraReq = {
   No_Pilihan: number,
   NIU: string,
 }

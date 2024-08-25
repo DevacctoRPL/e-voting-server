@@ -6,7 +6,8 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc, { Options } from 'swagger-jsdoc';
 import checkDbConnection from './middleware/checkConnectionDB';
-import type { DataLiveRes, LoginUserReq, UpdateSuaraMPKReq } from './types/express';
+import type { DataLiveRes, LoginUserReq, UpdateSuaraReq } from './types/express';
+import { IsVoted } from './middleware/isvoted';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -163,6 +164,7 @@ app.get('/', (req: Request, res: Response) => {
  *       500:
  *         description: Error authenticating user.
  */
+
 app.post('/loginuser', async (req: Request, res: Response) => {
   const LoginInfo: LoginUserReq = req.body;
   try {
@@ -203,8 +205,8 @@ app.post('/loginuser', async (req: Request, res: Response) => {
  *       505:
  *         description: Internal server error.
  */
-app.post('/UpdateOSIS', async (req: Request, res: Response) => {
-  const body: UpdateSuaraMPKReq = req.body;
+app.post('/UpdateOSIS', IsVoted, async (req: Request, res: Response) => {
+  const body: UpdateSuaraReq = req.body;
   try {
     const updateUser = await prisma.user.update({
       where: { NIU: body.NIU },
@@ -237,8 +239,8 @@ app.post('/UpdateOSIS', async (req: Request, res: Response) => {
  *       505:
  *         description: Internal server error.
  */
-app.post('/UpdateMPK', async (req: Request, res: Response) => {
-  const body: UpdateSuaraMPKReq = req.body;
+app.post('/UpdateMPK', IsVoted, async (req: Request, res: Response) => {
+  const body: UpdateSuaraReq = req.body;
   try {
     const updateUser = await prisma.user.update({
       where: { NIU: body.NIU },

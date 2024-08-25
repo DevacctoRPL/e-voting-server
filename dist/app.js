@@ -11,6 +11,7 @@ const morgan_1 = __importDefault(require("morgan"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const checkConnectionDB_1 = __importDefault(require("./middleware/checkConnectionDB"));
+const isvoted_1 = require("./middleware/isvoted");
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 // Swagger configuration
@@ -197,7 +198,7 @@ app.post('/loginuser', async (req, res) => {
  *       505:
  *         description: Internal server error.
  */
-app.post('/UpdateOSIS', async (req, res) => {
+app.post('/UpdateOSIS', isvoted_1.IsVoted, async (req, res) => {
     const body = req.body;
     try {
         const updateUser = await prisma.user.update({
@@ -230,7 +231,7 @@ app.post('/UpdateOSIS', async (req, res) => {
  *       505:
  *         description: Internal server error.
  */
-app.post('/UpdateMPK', async (req, res) => {
+app.post('/UpdateMPK', isvoted_1.IsVoted, async (req, res) => {
     const body = req.body;
     try {
         const updateUser = await prisma.user.update({
