@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient()
 
+/**
+ *
+ * This middleware is used to check the db connection for every request
+ * @param {Request} req - request mustopa 
+ */
 const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
   try {
     prisma.$connect().then(() => console.log("db connected"));

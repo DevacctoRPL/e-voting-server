@@ -5,28 +5,28 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient()
 
 export const IsVoted = async (req: Request, res: Response, next: NextFunction) => {
-  const { NIU }: UpdateSuaraReq = req.body;
+  const { NIU, No_Pilihan }: UpdateSuaraReq = req.body;
+  const organ: "MPK" | "OSIS" = No_Pilihan % 2 == 0 ? "MPK" : "OSIS"
 
   const user = await prisma.user.findUnique({
     where: {
-      NIU: NIU
+      NIU: NIU,
     }
   });
 
-  if (req.path.includes("OSIS")) {
-    if (user?.Pilihan_OSIS == null) {
-      return next();
-    } else {
-      return res.status(403).send({ message: "you have already voted for OSIS." });
+  const paslon = await prisma.paslon.findMany({
+    where: {
+      Organisasi: organ,
+      Suara: {
+        some: {
+          id: user?.id
+        }
+      }
     }
-  }
+  });
 
-  if (req.path.includes("MPK")) {
-    if (user?.Pilihan_MPK == null) {
-      return next();
-    } else {
-      return res.status(403).send({ message: "you have already voted for MPK." });
-    }
+  if (paslon.length > 0) {
+    return res.status(403).json({ message: "you have voted. dont vote again" })
   }
 
   next();

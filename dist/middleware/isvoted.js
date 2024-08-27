@@ -4,29 +4,26 @@ exports.IsVoted = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const IsVoted = async (req, res, next) => {
-    const { NIU } = req.body;
+    const { NIU, No_Pilihan } = req.body;
+    const organ = No_Pilihan % 2 == 0 ? "MPK" : "OSIS";
     const user = await prisma.user.findUnique({
         where: {
-            NIU: NIU
+            NIU: NIU,
         }
     });
-    if (req.path.includes("OSIS")) {
-        if (user?.Pilihan_OSIS == null) {
-            return next();
+    const paslon = await prisma.paslon.findMany({
+        where: {
+            Organisasi: organ,
+            Suara: {
+                some: {
+                    id: user?.id
+                }
+            }
         }
-        else {
-            return res.status(403).send({ message: "you have already voted for OSIS." });
-        }
+    });
+    if (paslon.length > 0) {
+        return res.status(403).json({ message: "you have voted. dont vote again" });
     }
-    if (req.path.includes("MPK")) {
-        if (user?.Pilihan_MPK == null) {
-            return next();
-        }
-        else {
-            return res.status(403).send({ message: "you have already voted for MPK." });
-        }
-    }
-    // If the path does not match either condition, just call next().
     next();
 };
 exports.IsVoted = IsVoted;

@@ -1,7 +1,6 @@
-export type UpdateSuaraReq = {
-  No_Pilihan: number,
-  NIU: string,
-}
+import { User } from "@prisma/client"
+
+export type UpdateSuaraReq = User & { No_Pilihan: number }
 
 export type LoginUserReq = {
   NIU: string,
