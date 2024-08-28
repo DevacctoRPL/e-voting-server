@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
+  origin: "http://localhost:5173",
   credentials: true,
 }));
 app.use(checkDbConnection);
@@ -25,6 +26,20 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Hello World!" });
 });
+
+app.get('/currentUser', async (req: Request, res: Response) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401)
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
+    if (err) {
+      return res.status(403)
+    }
+    return res.status(200).json(user)
+  })
+})
 
 app.post('/loginuser', async (req: Request, res: Response) => {
   const { NIU, password }: LoginUserReq = req.body;
@@ -45,15 +60,13 @@ app.post('/loginuser', async (req: Request, res: Response) => {
       throw new Error("Password Incorrect");
     }
 
-    const authtoken = jwt.sign(Auth, process.env.JWT_SECRET as string, { expiresIn: "24h" })
+    const authtoken = jwt.sign(Auth, process.env.JWT_SECRET as string, { expiresIn: "1h" })
 
     res.cookie('token', authtoken, ({
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict'
     }))
-
-    res.status(200).json({ message: "logged in successfully" })
+    res.status(200).send({ message: "logged in successfully" })
 
   } catch (error) {
     console.log(error)
