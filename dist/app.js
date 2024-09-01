@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const cors_1 = __importDefault(require("cors"));
 const client_1 = require("@prisma/client");
 const helmet_1 = __importDefault(require("helmet"));
@@ -15,6 +16,7 @@ const auth_1 = require("./middleware/auth");
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 // Middleware
+app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)({
     origin: "http://localhost:5173",
     credentials: true,
@@ -27,14 +29,19 @@ app.use(express_1.default.json());
 app.get('/', (req, res) => {
     res.json({ message: "Hello World!" });
 });
+app.get('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.status(200).send({ message: "Logged out Successfully" });
+});
 app.get('/currentUser', async (req, res) => {
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401);
+    const { token } = req.cookies;
+    if (!token || token === undefined) {
+        console.log("kaga ada token ah anjing");
+        return res.status(401).send({ message: "no token detected" });
     }
     jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
-            return res.status(403);
+            return res.status(403).send({ message: 'wrong credentials' });
         }
         return res.status(200).json(user);
     });
@@ -46,18 +53,18 @@ app.post('/loginuser', async (req, res) => {
             where: { NIU: NIU }
         });
         if (!CheckUser) {
-            throw new Error("User Not Found");
+            return res.status(404).send({ message: 'user not found' });
         }
         const Auth = await prisma.user.findFirst({
             where: { NIU: NIU, Password: password }
         });
         if (!Auth) {
-            throw new Error("Password Incorrect");
+            return res.status(401).send({ message: 'password inccorect' });
         }
         const authtoken = jsonwebtoken_1.default.sign(Auth, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.cookie('token', authtoken, ({
             httpOnly: true,
-            sameSite: 'strict'
+            sameSite: 'strict',
         }));
         res.status(200).send({ message: "logged in successfully" });
     }

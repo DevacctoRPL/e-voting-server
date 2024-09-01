@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import cookieparser from 'cookie-parser'
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import helmet from 'helmet';
@@ -13,6 +14,7 @@ const app = express();
 const prisma = new PrismaClient();
 
 // Middleware
+app.use(cookieparser())
 app.use(cors({
   origin: "http://localhost:5173",
   credentials: true,
@@ -27,15 +29,21 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Hello World!" });
 });
 
+app.get('/logout', (req: Request, res: Response) => {
+  res.clearCookie('token');
+  res.status(200).send({ message: "Logged out Successfully" })
+});
+
 app.get('/currentUser', async (req: Request, res: Response) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401)
+  const { token } = req.cookies;
+  if (!token || token === undefined) {
+    console.log("kaga ada token ah anjing")
+    return res.status(401).send({ message: "no token detected" })
   }
 
   jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
     if (err) {
-      return res.status(403)
+      return res.status(403).send({ message: 'wrong credentials' })
     }
     return res.status(200).json(user)
   })
@@ -49,7 +57,7 @@ app.post('/loginuser', async (req: Request, res: Response) => {
     });
 
     if (!CheckUser) {
-      throw new Error("User Not Found");
+      return res.status(404).send({ message: 'user not found' })
     }
 
     const Auth = await prisma.user.findFirst({
@@ -57,14 +65,14 @@ app.post('/loginuser', async (req: Request, res: Response) => {
     });
 
     if (!Auth) {
-      throw new Error("Password Incorrect");
+      return res.status(401).send({ message: 'password inccorect' })
     }
 
     const authtoken = jwt.sign(Auth, process.env.JWT_SECRET as string, { expiresIn: "1h" })
 
     res.cookie('token', authtoken, ({
       httpOnly: true,
-      sameSite: 'strict'
+      sameSite: 'strict',
     }))
     res.status(200).send({ message: "logged in successfully" })
 
@@ -114,6 +122,7 @@ app.get('/datares', jwtauth, async (_: Request, res: Response) => {
       prisma.user.count({ where: { pilihan: { some: { Id: 6, } } } }),
       prisma.user.count(),
     ]);
+
 
     const ResDataObj: DataLiveRes = {
       MPK: {
