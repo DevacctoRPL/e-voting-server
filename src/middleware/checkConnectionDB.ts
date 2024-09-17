@@ -9,7 +9,8 @@ const prisma = new PrismaClient()
  */
 const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
   try {
-    prisma.$connect().then(() => console.log("db connected"));
+    const boday = req.body ? JSON.stringify(req.body) : "nothing"
+    prisma.$connect().then(() => console.log(`DB connected. \nGoing to ${req.path} \n with ${boday}`));
     next();
   } catch (error) {
     console.error('Database connection error:\n', error, "\n");

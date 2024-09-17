@@ -33,18 +33,8 @@ app.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.status(200).send({ message: "Logged out Successfully" });
 });
-app.get('/currentUser', async (req, res) => {
-    const { token } = req.cookies;
-    if (!token || token === undefined) {
-        console.log("kaga ada token ah anjing");
-        return res.status(401).send({ message: "no token detected" });
-    }
-    jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).send({ message: 'wrong credentials' });
-        }
-        return res.status(200).json(user);
-    });
+app.get('/currentUser', auth_1.jwtauth, async (req, res) => {
+    res.status(200).json(req.body.user);
 });
 app.post('/loginuser', async (req, res) => {
     const { NIU, password } = req.body;
@@ -66,7 +56,7 @@ app.post('/loginuser', async (req, res) => {
             httpOnly: true,
             sameSite: 'strict',
         }));
-        res.status(200).send({ message: "logged in successfully" });
+        res.status(200).send(Auth);
     }
     catch (error) {
         console.log(error);
@@ -90,32 +80,28 @@ app.post('/vote', auth_1.jwtauth, isvoted_1.IsVoted, async (req, res) => {
     }
     catch (error) {
         console.log(error);
-        res.status(505).send("Internal server error");
+        return res.status(505).send("Internal server error");
     }
 });
 app.get('/datares', auth_1.jwtauth, async (_, res) => {
     try {
-        const [Pemilih_1_MPK, Pemilih_2_MPK, Pemilih_3_MPK, Pemilih_1_OSIS, Pemilih_2_OSIS, Pemilih_3_OSIS, Jumlah_User,] = await Promise.all([
+        const [Pemilih_1_MPK, Pemilih_2_MPK, Pemilih_1_OSIS, Pemilih_2_OSIS, Jumlah_User,] = await Promise.all([
             prisma.user.count({ where: { pilihan: { some: { Id: 1, } } } }),
-            prisma.user.count({ where: { pilihan: { some: { Id: 2, } } } }),
             prisma.user.count({ where: { pilihan: { some: { Id: 3, } } } }),
+            prisma.user.count({ where: { pilihan: { some: { Id: 2, } } } }),
             prisma.user.count({ where: { pilihan: { some: { Id: 4, } } } }),
-            prisma.user.count({ where: { pilihan: { some: { Id: 5, } } } }),
-            prisma.user.count({ where: { pilihan: { some: { Id: 6, } } } }),
             prisma.user.count(),
         ]);
         const ResDataObj = {
             MPK: {
                 Pemilih_1: Pemilih_1_MPK,
                 Pemilih_2: Pemilih_2_MPK,
-                Pemilih_3: Pemilih_3_MPK,
-                Jumlah_Vote: Pemilih_1_MPK + Pemilih_2_MPK + Pemilih_3_MPK,
+                Jumlah_Vote: Pemilih_1_MPK + Pemilih_2_MPK
             },
             OSIS: {
                 Pemilih_1: Pemilih_1_OSIS,
                 Pemilih_2: Pemilih_2_OSIS,
-                Pemilih_3: Pemilih_3_OSIS,
-                Jumlah_Vote: Pemilih_1_OSIS + Pemilih_2_OSIS + Pemilih_3_OSIS,
+                Jumlah_Vote: Pemilih_1_OSIS + Pemilih_2_OSIS
             },
             Jumlah_User: Jumlah_User
         };
@@ -124,5 +110,22 @@ app.get('/datares', auth_1.jwtauth, async (_, res) => {
     catch (error) {
         res.status(500).send({ message: "Error Occured.", err: error });
     }
+});
+app.get('/seed', async (req, res) => {
+    let users = [];
+    for (let i = 0; i < 10; i++) {
+        users.push({
+            NIU: `NIU${i + 1}`,
+            Nama: `Voter${i + 1}`,
+            Password: 12 + i
+        });
+    }
+    const rez = await prisma.user.createMany({
+        data: users
+    });
+    if (rez.count <= 0) {
+        return res.status(500).send({ message: "error bejir" });
+    }
+    return res.send(rez);
 });
 exports.default = app;

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cookieparser from 'cookie-parser'
 import cors from 'cors';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient} from '@prisma/client';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken'
 import morgan from 'morgan';
@@ -34,19 +34,8 @@ app.get('/logout', (req: Request, res: Response) => {
   res.status(200).send({ message: "Logged out Successfully" })
 });
 
-app.get('/currentUser', async (req: Request, res: Response) => {
-  const { token } = req.cookies;
-  if (!token || token === undefined) {
-    console.log("kaga ada token ah anjing")
-    return res.status(401).send({ message: "no token detected" })
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
-    if (err) {
-      return res.status(403).send({ message: 'wrong credentials' })
-    }
-    return res.status(200).json(user)
-  })
+app.get('/currentUser', jwtauth, async (req: Request, res: Response) => {
+  res.status(200).json(req.body.user)
 })
 
 app.post('/loginuser', async (req: Request, res: Response) => {
@@ -74,7 +63,8 @@ app.post('/loginuser', async (req: Request, res: Response) => {
       httpOnly: true,
       sameSite: 'strict',
     }))
-    res.status(200).send({ message: "logged in successfully" })
+
+    res.status(200).send(Auth)
 
   } catch (error) {
     console.log(error)
@@ -99,7 +89,7 @@ app.post('/vote', jwtauth, IsVoted, async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.log(error);
-    res.status(505).send("Internal server error");
+    return res.status(505).send("Internal server error");
   }
 });
 
@@ -108,18 +98,14 @@ app.get('/datares', jwtauth, async (_: Request, res: Response) => {
     const [
       Pemilih_1_MPK,
       Pemilih_2_MPK,
-      Pemilih_3_MPK,
       Pemilih_1_OSIS,
       Pemilih_2_OSIS,
-      Pemilih_3_OSIS,
       Jumlah_User,
     ] = await Promise.all([
       prisma.user.count({ where: { pilihan: { some: { Id: 1, } } } }),
-      prisma.user.count({ where: { pilihan: { some: { Id: 2, } } } }),
       prisma.user.count({ where: { pilihan: { some: { Id: 3, } } } }),
+      prisma.user.count({ where: { pilihan: { some: { Id: 2, } } } }),
       prisma.user.count({ where: { pilihan: { some: { Id: 4, } } } }),
-      prisma.user.count({ where: { pilihan: { some: { Id: 5, } } } }),
-      prisma.user.count({ where: { pilihan: { some: { Id: 6, } } } }),
       prisma.user.count(),
     ]);
 
@@ -128,14 +114,12 @@ app.get('/datares', jwtauth, async (_: Request, res: Response) => {
       MPK: {
         Pemilih_1: Pemilih_1_MPK,
         Pemilih_2: Pemilih_2_MPK,
-        Pemilih_3: Pemilih_3_MPK,
-        Jumlah_Vote: Pemilih_1_MPK + Pemilih_2_MPK + Pemilih_3_MPK,
+        Jumlah_Vote: Pemilih_1_MPK + Pemilih_2_MPK
       },
       OSIS: {
         Pemilih_1: Pemilih_1_OSIS,
         Pemilih_2: Pemilih_2_OSIS,
-        Pemilih_3: Pemilih_3_OSIS,
-        Jumlah_Vote: Pemilih_1_OSIS + Pemilih_2_OSIS + Pemilih_3_OSIS,
+        Jumlah_Vote: Pemilih_1_OSIS + Pemilih_2_OSIS
       },
       Jumlah_User: Jumlah_User
     };
@@ -146,5 +130,24 @@ app.get('/datares', jwtauth, async (_: Request, res: Response) => {
   }
 });
 
+app.get('/seed', async (req:Request,res:Response)=>{
+  let users: {NIU:string,Nama:string,Password:number}[] = []
+  for (let i = 0; i < 10; i++) {
+    users.push({
+      NIU:`NIU${i+1}`,
+      Nama:`Voter${i+1}`,
+      Password:12 + i
+    })
+  }
+
+  const rez = await prisma.user.createMany({
+    data: users
+  })
+  
+  if(rez.count <= 0) {
+    return res.status(500).send({message:"error bejir"})
+  }
+  return res.send(rez)
+})
 
 export default app;
