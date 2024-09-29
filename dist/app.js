@@ -26,10 +26,10 @@ app.use((0, helmet_1.default)());
 app.use((0, morgan_1.default)('combined'));
 app.use(express_1.default.json());
 // Routes
-app.get('/', (req, res) => {
+app.get('/', (res) => {
     res.json({ message: "Hello World!" });
 });
-app.get('/logout', (req, res) => {
+app.get('/logout', (_, res) => {
     res.clearCookie('token');
     res.status(200).send({ message: "Logged out Successfully" });
 });
@@ -54,6 +54,7 @@ app.post('/loginuser', async (req, res) => {
         const authtoken = jsonwebtoken_1.default.sign(Auth, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.cookie('token', authtoken, ({
             httpOnly: true,
+            secure: true,
             sameSite: 'strict',
         }));
         res.status(200).send(Auth);
@@ -66,7 +67,7 @@ app.post('/loginuser', async (req, res) => {
 app.post('/vote', auth_1.jwtauth, isvoted_1.IsVoted, async (req, res) => {
     const { No_Pilihan, NIU } = req.body;
     try {
-        const updateUser = await prisma.user.update({
+        await prisma.user.update({
             where: { NIU: NIU },
             data: {
                 pilihan: {
@@ -74,9 +75,7 @@ app.post('/vote', auth_1.jwtauth, isvoted_1.IsVoted, async (req, res) => {
                 }
             }
         });
-        if (updateUser) {
-            return res.status(200).send({ message: "Vote Updated" });
-        }
+        return res.status(200).send({ message: "Vote Updated" });
     }
     catch (error) {
         console.log(error);
@@ -85,7 +84,7 @@ app.post('/vote', auth_1.jwtauth, isvoted_1.IsVoted, async (req, res) => {
 });
 app.get('/datares', auth_1.jwtauth, async (_, res) => {
     try {
-        const [Pemilih_1_MPK, Pemilih_2_MPK, Pemilih_1_OSIS, Pemilih_2_OSIS, Jumlah_User,] = await Promise.all([
+        const [Pemilih_1_OSIS, Pemilih_2_OSIS, Pemilih_1_MPK, Pemilih_2_MPK, Jumlah_User,] = await Promise.all([
             prisma.user.count({ where: { pilihan: { some: { Id: 1, } } } }),
             prisma.user.count({ where: { pilihan: { some: { Id: 3, } } } }),
             prisma.user.count({ where: { pilihan: { some: { Id: 2, } } } }),

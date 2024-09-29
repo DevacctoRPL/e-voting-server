@@ -8,8 +8,6 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const jwtauth = (req, res, next) => {
     const token = req.cookies.token;
     if (!token)
-        return res.status(401);
-    if (token === undefined)
         return res.status(401).send({ message: "auth not found" });
     jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {

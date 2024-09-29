@@ -25,11 +25,11 @@ app.use(morgan('combined'));
 app.use(express.json());
 
 // Routes
-app.get('/', (req: Request, res: Response) => {
+app.get('/', ( res: Response) => {
   res.json({ message: "Hello World!" });
 });
 
-app.get('/logout', (req: Request, res: Response) => {
+app.get('/logout', (_:Request,res: Response) => {
   res.clearCookie('token');
   res.status(200).send({ message: "Logged out Successfully" })
 });
@@ -61,6 +61,7 @@ app.post('/loginuser', async (req: Request, res: Response) => {
 
     res.cookie('token', authtoken, ({
       httpOnly: true,
+      secure:true,
       sameSite: 'strict',
     }))
 
@@ -75,7 +76,7 @@ app.post('/loginuser', async (req: Request, res: Response) => {
 app.post('/vote', jwtauth, IsVoted, async (req: Request, res: Response) => {
   const { No_Pilihan, NIU }: UpdateSuaraReq = req.body;
   try {
-    const updateUser = await prisma.user.update({
+    await prisma.user.update({
       where: { NIU: NIU },
       data: {
         pilihan: {
@@ -84,9 +85,7 @@ app.post('/vote', jwtauth, IsVoted, async (req: Request, res: Response) => {
       }
     });
 
-    if (updateUser) {
-      return res.status(200).send({ message: "Vote Updated" });
-    }
+    return res.status(200).send({ message: "Vote Updated" });
   } catch (error) {
     console.log(error);
     return res.status(505).send("Internal server error");
@@ -96,10 +95,10 @@ app.post('/vote', jwtauth, IsVoted, async (req: Request, res: Response) => {
 app.get('/datares', jwtauth, async (_: Request, res: Response) => {
   try {
     const [
-      Pemilih_1_MPK,
-      Pemilih_2_MPK,
       Pemilih_1_OSIS,
       Pemilih_2_OSIS,
+      Pemilih_1_MPK,
+      Pemilih_2_MPK,
       Jumlah_User,
     ] = await Promise.all([
       prisma.user.count({ where: { pilihan: { some: { Id: 1, } } } }),

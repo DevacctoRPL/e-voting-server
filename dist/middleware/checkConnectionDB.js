@@ -9,8 +9,7 @@ const prisma = new client_1.PrismaClient();
  */
 const checkDbConnection = (req, res, next) => {
     try {
-        const boday = req.body ? JSON.stringify(req.body) : "nothing";
-        prisma.$connect().then(() => console.log(`DB connected. \nGoing to ${req.path} \n with ${boday}`));
+        prisma.$connect().then(() => console.log("DB connected."));
         next();
     }
     catch (error) {
