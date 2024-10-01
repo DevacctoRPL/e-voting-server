@@ -27,7 +27,6 @@ export const HasAllVoted = async (req:Request,res:Response,next:NextFunction) =>
   if(paslon.length == 2) {
     return res.status(403).send({message: "you have voted all"}) 
   }
-  console.log(paslon)
   next()
 }
 
