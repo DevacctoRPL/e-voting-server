@@ -18,5 +18,5 @@ export type DataLiveRes = {
     Pemilih_2: number,
     Jumlah_Vote: number,
   },
-  Jumlah_User: Jumlah_User
+  Jumlah_User: number
 }

@@ -1,13 +1,13 @@
 import express, { Request, Response } from 'express';
 import cookieparser from 'cookie-parser'
 import cors from 'cors';
-import { PrismaClient} from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken'
 import morgan from 'morgan';
 import checkDbConnection from './middleware/checkConnectionDB';
 import type { DataLiveRes, LoginUserReq, UpdateSuaraReq } from './types/express';
-import { IsVoted } from './middleware/isvoted';
+import { HasAllVoted, IsVoted } from './middleware/isvoted';
 import { jwtauth } from './middleware/auth';
 
 const app = express();
@@ -38,7 +38,7 @@ app.get('/currentUser', jwtauth, async (req: Request, res: Response) => {
   res.status(200).json(req.body.user)
 })
 
-app.post('/loginuser', async (req: Request, res: Response) => {
+app.post('/loginuser', HasAllVoted,async (req: Request, res: Response) => {
   const { NIU, password }: LoginUserReq = req.body;
   try {
     const CheckUser = await prisma.user.findUnique({
@@ -54,7 +54,7 @@ app.post('/loginuser', async (req: Request, res: Response) => {
     });
 
     if (!Auth) {
-      return res.status(401).send({ message: 'password inccorect' })
+      return res.status(401).send({ message: 'password incorrect' })
     }
 
     const authtoken = jwt.sign(Auth, process.env.JWT_SECRET as string, { expiresIn: "1h" })
@@ -101,10 +101,10 @@ app.get('/datares', jwtauth, async (_: Request, res: Response) => {
       Pemilih_2_MPK,
       Jumlah_User,
     ] = await Promise.all([
-      prisma.user.count({ where: { pilihan: { some: { Id: 1, } } } }),
-      prisma.user.count({ where: { pilihan: { some: { Id: 3, } } } }),
       prisma.user.count({ where: { pilihan: { some: { Id: 2, } } } }),
       prisma.user.count({ where: { pilihan: { some: { Id: 4, } } } }),
+      prisma.user.count({ where: { pilihan: { some: { Id: 1, } } } }),
+      prisma.user.count({ where: { pilihan: { some: { Id: 3, } } } }),
       prisma.user.count(),
     ]);
 
