@@ -21,7 +21,7 @@ app.use(cors({
 }));
 app.use(checkDbConnection);
 app.use(helmet());
-app.use(morgan('combined'));
+app.use(morgan('tiny'));
 app.use(express.json());
 
 // Routes
