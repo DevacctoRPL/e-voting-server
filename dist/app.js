@@ -13,17 +13,18 @@ const morgan_1 = __importDefault(require("morgan"));
 const checkConnectionDB_1 = __importDefault(require("./middleware/checkConnectionDB"));
 const isvoted_1 = require("./middleware/isvoted");
 const auth_1 = require("./middleware/auth");
+const jsonH_1 = __importDefault(require("./types/jsonH"));
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 // Middleware
 app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)({
-    origin: "https://e-voting.smkpluspnb.sch.id",
+    origin: "http://localhost:5173",
     credentials: true,
 }));
 app.use(checkConnectionDB_1.default);
 app.use((0, helmet_1.default)());
-app.use((0, morgan_1.default)('short'));
+app.use((0, morgan_1.default)('tiny'));
 app.use(express_1.default.json());
 // Routes
 app.get('/', (res) => {
@@ -51,13 +52,14 @@ app.post('/loginuser', isvoted_1.HasAllVoted, async (req, res) => {
         if (!Auth) {
             return res.status(401).send({ message: 'password incorrect' });
         }
-        const authtoken = jsonwebtoken_1.default.sign(Auth, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const UserResponse = (0, jsonH_1.default)(Auth);
+        const authtoken = jsonwebtoken_1.default.sign(UserResponse, process.env.JWT_SECRET);
         res.cookie('token', authtoken, ({
             httpOnly: true,
             secure: true,
             sameSite: 'strict',
         }));
-        res.status(200).send(Auth);
+        res.status(200).send(UserResponse);
     }
     catch (error) {
         console.log(error);

@@ -13,6 +13,8 @@ const jwtauth = (req, res, next) => {
         if (err) {
             return res.status(403).send({ message: "auth not verified" });
         }
+        const nUser = { ...user, Password: parseInt(user.Password) };
+        console.log(nUser, typeof nUser.Password);
         req.body.user = user;
         next();
     });

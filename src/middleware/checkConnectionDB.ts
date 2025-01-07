@@ -6,6 +6,7 @@ const prisma = new PrismaClient()
  * This middleware is used to check the db connection for every request
  */
 const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
+  console.log(`\ngoing to ${req.path} with: \n${req.body}\n `)
   try {
     prisma.$connect().then(() => console.log("DB connected."));
     next();

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,12 +9,12 @@ datasource db {
 
 model User {
   id       Int      @id @default(autoincrement())
-  Nama     String
-  NIU      String   @unique
-  Password Int
-  pilihan  Paslon[]
+  Nama     String   @db.VarChar(255)
+  NIU      String   @unique @db.VarChar(255)
+  Password BigInt
+  pilihan  Paslon[] @relation("PaslonToUser")
 
-  @@index(NIU)
+  @@index([NIU])
 }
 
 model Paslon {
@@ -28,7 +22,15 @@ model Paslon {
   Nama_Ketua       String
   Nama_Wakil_Ketua String
   Organisasi       Organisasi
-  Suara            User[]
+  Suara            User[]     @relation("PaslonToUser")
+}
+
+model drizzle_migrations {
+  id         BigInt  @id @unique(map: "id") @default(autoincrement()) @db.UnsignedBigInt
+  hash       String  @db.Text
+  created_at BigInt?
+
+  @@map("__drizzle_migrations")
 }
 
 enum Organisasi {

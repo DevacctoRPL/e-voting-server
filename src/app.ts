@@ -9,6 +9,7 @@ import checkDbConnection from './middleware/checkConnectionDB';
 import type { DataLiveRes, LoginUserReq, UpdateSuaraReq } from './types/express';
 import { HasAllVoted, IsVoted } from './middleware/isvoted';
 import { jwtauth } from './middleware/auth';
+import json from './types/jsonH';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -25,11 +26,11 @@ app.use(morgan('tiny'));
 app.use(express.json());
 
 // Routes
-app.get('/', ( res: Response) => {
+app.get('/', (res: Response) => {
   res.json({ message: "Hello World!" });
 });
 
-app.get('/logout', (_:Request,res: Response) => {
+app.get('/logout', (_: Request, res: Response) => {
   res.clearCookie('token');
   res.status(200).send({ message: "Logged out Successfully" })
 });
@@ -38,7 +39,7 @@ app.get('/currentUser', jwtauth, async (req: Request, res: Response) => {
   res.status(200).json(req.body.user)
 })
 
-app.post('/loginuser', HasAllVoted,async (req: Request, res: Response) => {
+app.post('/loginuser', HasAllVoted, async (req: Request, res: Response) => {
   const { NIU, password }: LoginUserReq = req.body;
   try {
     const CheckUser = await prisma.user.findUnique({
@@ -57,15 +58,16 @@ app.post('/loginuser', HasAllVoted,async (req: Request, res: Response) => {
       return res.status(401).send({ message: 'password incorrect' })
     }
 
-    const authtoken = jwt.sign(Auth, process.env.JWT_SECRET as string, { expiresIn: "1h" })
+    const UserResponse = json(Auth)
+    const authtoken = jwt.sign(UserResponse, process.env.JWT_SECRET as string)
 
     res.cookie('token', authtoken, ({
       httpOnly: true,
-      secure:true,
+      secure: true,
       sameSite: 'strict',
     }))
 
-    res.status(200).send(Auth)
+    res.status(200).send(UserResponse)
 
   } catch (error) {
     console.log(error)
@@ -129,22 +131,22 @@ app.get('/datares', jwtauth, async (_: Request, res: Response) => {
   }
 });
 
-app.get('/seed', async (req:Request,res:Response)=>{
-  let users: {NIU:string,Nama:string,Password:number}[] = []
+app.get('/seed', async (req: Request, res: Response) => {
+  let users: { NIU: string, Nama: string, Password: number }[] = []
   for (let i = 0; i < 10; i++) {
     users.push({
-      NIU:`NIU${i+1}`,
-      Nama:`Voter${i+1}`,
-      Password:12 + i
+      NIU: `NIU${i + 1}`,
+      Nama: `Voter${i + 1}`,
+      Password: 12 + i
     })
   }
 
   const rez = await prisma.user.createMany({
     data: users
   })
-  
-  if(rez.count <= 0) {
-    return res.status(500).send({message:"error bejir"})
+
+  if (rez.count <= 0) {
+    return res.status(500).send({ message: "error bejir" })
   }
   return res.send(rez)
 })
